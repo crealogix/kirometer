@@ -1,0 +1,886 @@
+{
+  "uid": "kiro-credits",
+  "title": "Kiro Credit Consumption",
+  "description": "Credit and message consumption per user, client type, model and subscription tier. Source: Kiro user_report CSVs in S3.",
+  "tags": [
+    "kiro",
+    "cost",
+    "llm"
+  ],
+  "timezone": "utc",
+  "editable": true,
+  "schemaVersion": 39,
+  "version": 5,
+  "refresh": "",
+  "time": {
+    "from": "now/M",
+    "to": "now/M"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "user",
+        "label": "User",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "kiro-usage"
+        },
+        "query": "SELECT DISTINCT user_label FROM v_usage_daily ORDER BY 1",
+        "definition": "SELECT DISTINCT user_label FROM v_usage_daily ORDER BY 1",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "name": "client_type",
+        "label": "Type",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "kiro-usage"
+        },
+        "query": "SELECT DISTINCT client_type FROM v_usage_daily ORDER BY 1",
+        "definition": "SELECT DISTINCT client_type FROM v_usage_daily ORDER BY 1",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "name": "model",
+        "label": "Model",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "kiro-usage"
+        },
+        "query": "SELECT DISTINCT model FROM v_usage_model_daily ORDER BY 1",
+        "definition": "SELECT DISTINCT model FROM v_usage_model_daily ORDER BY 1",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "name": "subscription",
+        "label": "Subscription",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "kiro-usage"
+        },
+        "query": "SELECT DISTINCT subscription_tier FROM v_usage_daily WHERE subscription_tier IS NOT NULL ORDER BY 1",
+        "definition": "SELECT DISTINCT subscription_tier FROM v_usage_daily WHERE subscription_tier IS NOT NULL ORDER BY 1",
+        "refresh": 1,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Credits per user over time",
+      "description": "Stacked daily credit consumption, one series per user.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT usage_date::timestamptz AS time,\n       user_label AS metric,\n       sum(credits_used) AS credits\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Credits used",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT COALESCE(sum(credits_used), 0) AS \"Credits\"\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active users",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT count(DISTINCT user_id) AS \"Users\"\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Overage credits used",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT COALESCE(sum(overage_credits_used), 0) AS \"Overage\"\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Messages",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT COALESCE(sum(total_messages), 0) AS \"Messages\"\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Credits by type (cli / ide / plugin)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT usage_date::timestamptz AS time,\n       client_type AS metric,\n       sum(credits_used) AS credits\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Credits by subscription tier",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT usage_date::timestamptz AS time,\n       COALESCE(subscription_tier, 'unknown') AS metric,\n       sum(credits_used) AS credits\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Messages by model",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT usage_date::timestamptz AS time,\n       model AS metric,\n       sum(messages) AS messages\nFROM v_usage_model_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\n  AND model IN (${model:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Credits attributed to model",
+      "description": "Credits are only reported per user/day/client, never per model. These values split each day's credits across models in proportion to message share, so they are an estimate.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT usage_date::timestamptz AS time,\n       model AS metric,\n       sum(credits_attributed) AS credits\nFROM v_usage_model_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\n  AND model IN (${model:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Overage credits used over time",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 0,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT usage_date::timestamptz AS time,\n       user_label AS metric,\n       sum(overage_credits_used) AS overage_credits\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\nGROUP BY 1, 2\nHAVING sum(overage_credits_used) > 0\nORDER BY 1, 2"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "table",
+      "title": "Overage status per user",
+      "description": "Overage credits consumed, the configured cap, and whether overage is enabled.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Overage Credits"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cap"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Overage Credits",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT user_label AS \"User\",\n       bool_or(overage_enabled) AS \"Enabled\",\n       max(overage_cap) AS \"Cap\",\n       sum(overage_credits_used) AS \"Overage Credits\"\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\nGROUP BY 1\nORDER BY 4 DESC, 1"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "table",
+      "title": "Per-user summary",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "kiro-usage"
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Credits"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Overage Credits"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Usage %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 75
+                    },
+                    {
+                      "color": "red",
+                      "value": 100
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Usage %",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "kiro-usage"
+          },
+          "rawSql": "SELECT user_label AS \"User\",\n       string_agg(DISTINCT subscription_tier, ', ' ORDER BY subscription_tier) AS \"Subscription\",\n       string_agg(DISTINCT client_type, ', ' ORDER BY client_type) AS \"Type\",\n       sum(credits_used) AS \"Credits\",\n       sum(total_messages) AS \"Messages\",\n       sum(chat_conversations) AS \"Conversations\",\n       sum(overage_credits_used) AS \"Overage Credits\",\n       max(overage_cap) AS \"Overage Cap\",\n       bool_or(overage_enabled) AS \"Overage Enabled\",\n       -- Latest limit, not the maximum: a mid-month tier change must not\n       -- leave the old limit in place.\n       (array_agg(usage_limit ORDER BY usage_date DESC)\n            FILTER (WHERE usage_limit IS NOT NULL))[1] AS \"Usage Limit\",\n       round(100 * sum(credits_used)\n             / NULLIF((array_agg(usage_limit ORDER BY usage_date DESC)\n                       FILTER (WHERE usage_limit IS NOT NULL))[1], 0), 1) AS \"Usage %\",\n       count(DISTINCT usage_date) AS \"Active Days\"\nFROM v_usage_daily\nWHERE $__timeFilter(usage_date)\n  AND client_type IN (${client_type:sqlstring})\n  AND user_label IN (${user:sqlstring})\n  AND subscription_tier IN (${subscription:sqlstring})\nGROUP BY 1\nORDER BY \"Usage %\" DESC NULLS LAST, 4 DESC"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+# --- Deployment configuration and local state ---------------------------------
+# config/<environment>.tfvars holds account IDs, network IDs, bucket names and
+# e-mail addresses; config/*.tfstate* holds the bootstrap state. Only the
+# example is public.
+config/*
+!config/example.tfvars
+
+# --- OpenTofu working files ---------------------------------------------------
+# Remote states live in S3, encrypted with KMS. Plan files can contain
+# resolved values, so they are never committed.
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+*.tfplan
+crash.log
+override.tf
+*_override.tf
+
+# --- Python and build output --------------------------------------------------
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+
+# --- Downloaded reports and exports (personal data) ---------------------------
+data/
+*.csv
+*.xlsx
+*.json.gz
+
+# --- OS -----------------------------------------------------------------------
+.DS_Store
