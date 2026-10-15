@@ -19,6 +19,8 @@ conversation, not to switch plans automatically.
 
 ## What you get
 
+![Kiro Credit Consumption dashboard with usernames covered](docs/dashboard.png)
+
 **A dashboard** with credits per user over time, split by client (CLI, IDE,
 plugin), model and subscription tier, plus a per-user summary with usage of
 the plan limit in percent.
