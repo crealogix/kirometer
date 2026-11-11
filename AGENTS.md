@@ -110,6 +110,12 @@ These each cost a debugging round; don't reintroduce them.
   `settings = { topic_arn = ... }` is required.
 - **Time intervals are not inherited** by child notification policies; repeat
   `active_timings` on children.
+- **Restructuring delivery windows is a two-step apply.** A mute timing still
+  referenced by a notification policy cannot be deleted (Grafana returns 409
+  `used by notification policies`), and a single apply may order the delete
+  before the policy update. First apply the policy change on its own
+  (`-target=module.grafana.grafana_notification_policy.root`) to release the
+  old interval, then apply again to delete it.
 - **The RDS master user is not a superuser.** No `ALTER ROLE ... SUPERUSER`
   clauses, not even `NOSUPERUSER`. Tests cover this with a non-superuser
   fixture (`rds_like_db`).
